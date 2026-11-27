@@ -9,6 +9,15 @@ import { originOf, securityHeaders } from "./src/lib/securityHeaders";
 const API_ORIGIN = (process.env.API_ORIGIN ?? "http://localhost:4000").replace(/\/+$/, "");
 
 /**
+ * The version in the footer. Vercel builds get the deployed commit (`production-abc1234`, as the
+ * old AWS deploy did), so every deploy shows a new one; other builds keep NEXT_PUBLIC_APP_VERSION.
+ */
+const VERCEL_SHA = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7);
+const APP_VERSION = VERCEL_SHA
+  ? `${process.env.VERCEL_ENV === "production" ? "production" : "preview"}-${VERCEL_SHA}`
+  : (process.env.NEXT_PUBLIC_APP_VERSION ?? "1.0.0");
+
+/**
  * Where signed attachment links point (the API's API_PUBLIC_URL). Defaults to API_ORIGIN;
  * set API_PUBLIC_URL when browsers reach the API on another address than Next.js does.
  */
@@ -28,6 +37,7 @@ const SECURITY_HEADERS = securityHeaders({
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  env: { NEXT_PUBLIC_APP_VERSION: APP_VERSION },
   // `next build` also writes .next/standalone (a minimal server.js + traced node_modules) that the
   // Docker image runs. `next dev` and `next start` are unaffected.
   output: "standalone",

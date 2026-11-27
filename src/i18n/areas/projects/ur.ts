@@ -323,6 +323,9 @@ export const strings: Widen<typeof En.strings> = {
     people: "افراد",
     chooseMunshis: "منشی منتخب کریں",
     inviteHint: "پی ایم اور منشی کو ٹیم ← دعوت نامے سے مدعو کریں۔",
+    addPm: "نیا پروجیکٹ مینیجر",
+    addMunshi: "نیا منشی",
+    invitedHint: "دعوت بھیج دی۔ قبول کرنے کے بعد وہ یہاں نظر آئے گا، اور اس پروجیکٹ تک رسائی پہلے سے مل جائے گی۔",
   },
   v: {
     stagesBeforeRetention: "ریٹینشن سے پہلے کے مراحل کا جوڑ {expected}% ہونا چاہیے (ابھی {total}%)",

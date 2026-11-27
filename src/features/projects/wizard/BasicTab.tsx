@@ -2,6 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { UserPlus, X } from "lucide-react";
+import { useState } from "react";
 import { useForm, useFormContext, useWatch } from "react-hook-form";
 import type { z } from "zod";
 import { useGetClientsQuery } from "@/api/services/clients.api";
@@ -14,9 +15,9 @@ import { ComboboxField } from "@/components/forms/ComboboxField";
 import { DateField } from "@/components/forms/DateField";
 import { FieldGrid, Form, FormSection } from "@/components/forms/Form";
 import { PhoneField } from "@/components/forms/PhoneInput";
-import { SelectField } from "@/components/forms/SelectField";
 import { TextField } from "@/components/forms/TextField";
 import { Button } from "@/components/ui/button";
+import { InviteMemberModal } from "@/features/team/components/MemberModal";
 import { useMutationToast } from "@/hooks/useMutationToast";
 import { useT } from "@/i18n/useT";
 import { normaliseAnyPhone } from "@/lib/phone";
@@ -88,6 +89,10 @@ export function BasicTab() {
   const { projectId, project, locked, onSaved } = useWizard();
   // Picking the PM / munshis needs the team permission and the member list.
   const isOwner = useCan({ allPermissions: ["projects.team.manage", "team.member.view"] });
+  // "+ Add project manager / site clerk" opens the Team invite popup (needs the invite permission).
+  const canInvite = useCan("team.member.manage");
+  const [inviting, setInviting] = useState<"PM" | "MUNSHI" | null>(null);
+  const [invited, setInvited] = useState(false);
   const [create] = useCreateProjectMutation();
   const [updateBasic] = useUpdateBasicMutation();
   const [setTeam] = useSetTeamMutation();
@@ -163,6 +168,7 @@ export function BasicTab() {
   };
 
   return (
+    <>
     <Form form={form} onSubmit={onSubmit} id={WIZARD_FORM_ID}>
       <SectionCard title={t("field.project")}>
         <div className="space-y-5">
@@ -191,12 +197,14 @@ export function BasicTab() {
         <SectionCard title={t("field.team")} description={t("projects.basic.teamDesc")}>
           <FormSection title={t("projects.basic.people")}>
             <FieldGrid>
-              <SelectField
+              <ComboboxField
                 name="pmId"
                 label={t("field.projectManager")}
-                options={(pms.data?.items ?? []).map((u) => ({ value: u.id, label: u.name }))}
-                noneLabel={t("projects.list.noPmYet")}
+                options={(pms.data?.items ?? []).map((u) => ({ value: u.id, label: u.name, description: u.phone }))}
+                loading={pms.isLoading}
                 placeholder={t("projects.list.noPmYet")}
+                createLabel={canInvite ? t("projects.basic.addPm") : undefined}
+                onCreate={canInvite ? () => setInviting("PM") : undefined}
                 disabled={locked && project?.status !== "CLOSEOUT"}
               />
               <ComboboxField
@@ -206,10 +214,18 @@ export function BasicTab() {
                 options={(munshis.data?.items ?? []).map((u) => ({ value: u.id, label: u.name, description: u.phone }))}
                 loading={munshis.isLoading}
                 placeholder={t("projects.basic.chooseMunshis")}
+                createLabel={canInvite ? t("projects.basic.addMunshi") : undefined}
+                onCreate={canInvite ? () => setInviting("MUNSHI") : undefined}
                 disabled={locked && project?.status !== "CLOSEOUT"}
               />
             </FieldGrid>
-            {!(pms.data?.items.length || munshis.data?.items.length) && !pms.isLoading ? (
+            {invited ? (
+              <p className="flex items-center gap-2 text-xs text-muted-foreground">
+                <UserPlus className="size-3.5" aria-hidden />
+                {t("projects.basic.invitedHint")}
+              </p>
+            ) : null}
+            {!invited && !(pms.data?.items.length || munshis.data?.items.length) && !pms.isLoading ? (
               <p className="flex items-center gap-2 text-xs text-muted-foreground">
                 <UserPlus className="size-3.5" aria-hidden />
                 {t("projects.basic.inviteHint")}
@@ -219,5 +235,17 @@ export function BasicTab() {
         </SectionCard>
       ) : null}
     </Form>
+    {/* Outside the wizard <Form>: React events bubble through portals, so a submit inside would reach it. */}
+    {canInvite ? (
+      <InviteMemberModal
+        key={inviting ?? "closed"}
+        open={inviting !== null}
+        onOpenChange={(o) => !o && setInviting(null)}
+        account={inviting ?? "PM"}
+        projectIds={projectId ? [projectId] : []}
+        onSent={() => setInvited(true)}
+      />
+    ) : null}
+    </>
   );
 }

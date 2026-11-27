@@ -323,6 +323,9 @@ export const strings: Widen<typeof En.strings> = {
     people: "Log",
     chooseMunshis: "Munshi chunein",
     inviteHint: "PM aur Munshi ko Team → Invitations se bulayein.",
+    addPm: "Naya project manager",
+    addMunshi: "Naya munshi",
+    invitedHint: "Dawat bhej di. Qabool karne ke baad woh yahan nazar ayega, aur is project tak rasai pehle se mil jayegi.",
   },
   v: {
     stagesBeforeRetention: "Retention se pehle ke stages ka jor {expected}% hona chahiye (abhi {total}%)",

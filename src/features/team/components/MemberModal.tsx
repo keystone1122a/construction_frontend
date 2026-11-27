@@ -212,9 +212,17 @@ const hasErrors = (errors: FieldErrors) => Object.keys(errors).length > 0;
 export function InviteMemberModal({
   open,
   onOpenChange,
+  account: startAccount = "PM",
+  projectIds: startProjects,
+  onSent,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Starts with this account type's template (PM → Project Manager, MUNSHI → Munshi). */
+  account?: AccountType;
+  /** Projects ticked from the start (e.g. the project being set up). */
+  projectIds?: string[];
+  onSent?: () => void;
 }) {
   const t = useT();
   const language = useLanguage();
@@ -231,16 +239,17 @@ export function InviteMemberModal({
   const run = useMutationToast();
   const form = useForm<z.input<typeof inviteSchema>, unknown, z.output<typeof inviteSchema>>({
     resolver: zodResolver(inviteSchema),
-    defaultValues: { name: "", phone: "", email: "", role: "PM", projectIds: [], designationId: null },
+    defaultValues: { name: "", phone: "", email: "", role: startAccount, projectIds: startProjects ?? [], designationId: null },
   });
   const roles = rolesQuery.data;
   const catalog = catalogQuery.data;
-  // Until something is ticked: the Project Manager template (if this manager may give it).
+  // Until something is ticked: the account type's template (if this manager may give it).
   const initial = useMemo(() => {
     if (!roles || !catalog) return null;
-    const pm = roles.find((r) => r.isSystem && r.key === "PROJECT_MANAGER");
-    return { selected: pm && canGiveRole(me, pm, catalog) ? [pm.id] : [] };
-  }, [roles, catalog, me]);
+    const key = startAccount === "MUNSHI" ? "MUNSHI" : "PROJECT_MANAGER";
+    const template = roles.find((r) => r.isSystem && r.key === key);
+    return { selected: template && canGiveRole(me, template, catalog) ? [template.id] : [] };
+  }, [roles, catalog, me, startAccount]);
   const sel = useRoleSelection(roles, catalog, initial);
   const formAccount = useWatch({ control: form.control, name: "role" }) as AccountType;
   const decided = accountOfRoles(sel.roles);
@@ -288,6 +297,7 @@ export function InviteMemberModal({
         },
       },
     );
+    if (result) onSent?.();
     if (result)
       setSent({
         ...result,

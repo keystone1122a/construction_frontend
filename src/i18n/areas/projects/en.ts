@@ -322,6 +322,9 @@ export const strings = {
     people: "People",
     chooseMunshis: "Choose site clerks",
     inviteHint: "Invite PMs and site clerks from Team → Invitations.",
+    addPm: "Add project manager",
+    addMunshi: "Add site clerk",
+    invitedHint: "Invite sent. The person shows up here once they accept it, and already has access to this project.",
   },
   v: {
     stagesBeforeRetention: "Stages before the retention must add up to {expected}% (now {total}%)",

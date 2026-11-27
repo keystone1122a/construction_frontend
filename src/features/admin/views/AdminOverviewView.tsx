@@ -20,6 +20,12 @@ function HealthList() {
   if (!data) return <p className="text-sm text-muted-foreground">Checking…</p>;
   const job = data.jobs.subscriptionLifecycle;
   const rows = [
+    // The web app's own build (version · commit on Vercel): shows a deploy went live.
+    {
+      name: "Web",
+      ok: true,
+      detail: [`v${process.env.NEXT_PUBLIC_APP_VERSION ?? "1.0"}`, process.env.NEXT_PUBLIC_APP_COMMIT].filter(Boolean).join(" · "),
+    },
     { name: "API", ok: data.api.ok, detail: `v${data.version} · ${data.environment}` },
     { name: "Database", ok: data.database.ok, detail: data.database.latencyMs !== undefined ? `${data.database.latencyMs} ms` : (data.database.error ?? "") },
     { name: "SMS gateway", ok: true, detail: data.smsProvider },

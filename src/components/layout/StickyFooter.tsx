@@ -12,6 +12,8 @@ import { cn } from "@/lib/cn";
 import { useMe } from "@/store/hooks";
 
 const VERSION = process.env.NEXT_PUBLIC_APP_VERSION ?? "1.0";
+/** The deployed commit on Vercel (empty elsewhere): the footer version's tooltip. */
+const COMMIT = process.env.NEXT_PUBLIC_APP_COMMIT || undefined;
 
 const POLL_MS = 30_000;
 const MINUTE = 60_000;
@@ -84,7 +86,7 @@ export function StickyFooter() {
         ))}
       </div>
       <div className="flex shrink-0 items-center gap-3 text-xs text-muted-foreground">
-        <span className="hidden sm:inline">{t("shell.version", { version: VERSION })}</span>
+        <span className="hidden sm:inline" title={COMMIT}>{t("shell.version", { version: VERSION })}</span>
         <SyncBadge />
       </div>
     </footer>

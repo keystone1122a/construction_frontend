@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { withSentryConfig } from "@sentry/nextjs/config";
 import type { NextConfig } from "next";
 import { originOf, securityHeaders } from "./src/lib/securityHeaders";
@@ -9,13 +10,13 @@ import { originOf, securityHeaders } from "./src/lib/securityHeaders";
 const API_ORIGIN = (process.env.API_ORIGIN ?? "http://localhost:4000").replace(/\/+$/, "");
 
 /**
- * The version in the footer. Vercel builds get the deployed commit (`production-abc1234`, as the
- * old AWS deploy did), so every deploy shows a new one; other builds keep NEXT_PUBLIC_APP_VERSION.
+ * The version in the footer: package.json's "version" (bump it in each release PR, e.g. 1.1.0 → 1.2.0).
+ * Vercel builds always use it, and also pass the deployed commit (shown in Service health and as
+ * the footer's tooltip). Other builds may set NEXT_PUBLIC_APP_VERSION (the desktop app sets its own).
  */
-const VERCEL_SHA = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7);
-const APP_VERSION = VERCEL_SHA
-  ? `${process.env.VERCEL_ENV === "production" ? "production" : "preview"}-${VERCEL_SHA}`
-  : (process.env.NEXT_PUBLIC_APP_VERSION ?? "1.0.0");
+const PACKAGE_VERSION = (JSON.parse(readFileSync(new URL("./package.json", import.meta.url), "utf8")) as { version: string }).version;
+const APP_COMMIT = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "";
+const APP_VERSION = process.env.VERCEL ? PACKAGE_VERSION : (process.env.NEXT_PUBLIC_APP_VERSION ?? PACKAGE_VERSION);
 
 /**
  * Where signed attachment links point (the API's API_PUBLIC_URL). Defaults to API_ORIGIN;
@@ -37,7 +38,7 @@ const SECURITY_HEADERS = securityHeaders({
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  env: { NEXT_PUBLIC_APP_VERSION: APP_VERSION },
+  env: { NEXT_PUBLIC_APP_VERSION: APP_VERSION, NEXT_PUBLIC_APP_COMMIT: APP_COMMIT },
   // `next build` also writes .next/standalone (a minimal server.js + traced node_modules) that the
   // Docker image runs. `next dev` and `next start` are unaffected.
   output: "standalone",
